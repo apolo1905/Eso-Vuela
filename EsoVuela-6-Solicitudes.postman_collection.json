@@ -1,0 +1,17 @@
+{
+  "info": { "name": "Eso Vuela - 6 solicitudes", "description": "Ejecuta en orden. Las eliminaciones son permanentes.", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:4173" },
+    { "key": "clientToken", "value": "" },
+    { "key": "merchantToken", "value": "" },
+    { "key": "productId", "value": "" }
+  ],
+  "item": [
+    { "name": "1. Registrar cliente", "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('clientPhone', '300' + Date.now().toString().slice(-7));"] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Cliente creado', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('clientToken', pm.response.json().token);"] } }], "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"role\": \"client\",\n  \"name\": \"Cliente Postman\",\n  \"phone\": \"{{clientPhone}}\",\n  \"password\": \"ClaveDemo123\",\n  \"reminders\": false\n}" }, "url": "{{baseUrl}}/api/auth/register" } },
+    { "name": "2. Registrar comercio", "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('merchantPhone', '301' + Date.now().toString().slice(-7));"] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Comercio creado', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('merchantToken', pm.response.json().token);"] } }], "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"role\": \"merchant\",\n  \"name\": \"Comercio Postman\",\n  \"zone\": \"Centro\",\n  \"phone\": \"{{merchantPhone}}\",\n  \"password\": \"ClaveDemo123\"\n}" }, "url": "{{baseUrl}}/api/auth/register" } },
+    { "name": "3. Ver productos", "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Productos disponibles', () => pm.response.to.have.status(200));", "const products = pm.response.json().products;", "if (products.length && !pm.collectionVariables.get('productId')) pm.collectionVariables.set('productId', products[0].id);"] } }], "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{merchantToken}}" }], "url": "{{baseUrl}}/api/products" } },
+    { "name": "4. Crear pedido", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{clientToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"items\": {\n    \"AA\": 30\n  }\n}" }, "url": "{{baseUrl}}/api/orders" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Pedido creado', () => pm.response.to.have.status(201));"] } }] },
+    { "name": "5. Eliminar producto", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{merchantToken}}" }], "url": "{{baseUrl}}/api/products/{{productId}}" } },
+    { "name": "6. Eliminar usuario cliente", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }], "url": "{{baseUrl}}/api/auth/me" } }
+  ]
+}
